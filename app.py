@@ -17,7 +17,7 @@ label_dict = {0:'Angry',1:'Disgust',2:'Fear',3:'Happy',4:'Neutral',5:'Sad',6:'Su
 
 print(emotion_detection_model)
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET, POST'])
 def index():
     if request.method == 'POST':
         image_file = request.files['image']
@@ -28,6 +28,9 @@ def index():
         result = list(result[0])
         img_index = result.index(max(result))
         return label_dict[img_index]
+    elif request.method == 'GET':
+        return 'Hello, World!'
+    
 
 
 def load(filename):
@@ -37,4 +40,4 @@ def load(filename):
     np_image = np.expand_dims(np_image, axis=0)
     return np_image
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=(os.environ.get("PORT", 8080)))
