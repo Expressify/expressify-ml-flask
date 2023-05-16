@@ -159,6 +159,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# ML MODEL 
-face_classifier_new.h5
-/upload
+face_clasifier_new.h5
+settings.json
