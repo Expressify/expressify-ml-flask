@@ -14,6 +14,7 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 import pandas as pd
 import regex as re
 import cv2
+import asyncio
 
 nltk.download("stopwords")
 
@@ -110,21 +111,25 @@ pic_size = 224
 label_dict = ["Angry", "Disgust", "Fear", "Happy", "Neutral", "Sad", "Surprise"]
 
 
-@app.route("/emotion-prediction", methods=["GET", "POST"])
+@app.route("/emotion_prediction", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         image_file = request.files["image"]
+        print(image_file)
         image_path = os.path.join(app.config["LOCAL_FOLDER"], image_file.filename)
         image_file.save(image_path)
         test_image = load(image_path)
         print(test_image)
         prediction = test_image["prediction"]
-        return jsonify(prediction=prediction, status=True)
+        if prediction != "failed":
+            return jsonify(prediction=prediction, status=True)
+        else:
+            return jsonify(status=False)
     if request.method == "GET":
         return "Server Up!"
 
 
-@app.route("/jurnal-predict", methods=["POST"])
+@app.route("/jurnal_prediction", methods=["POST"])
 def predict():
     if request.method == "POST":
         data = request.get_json()
@@ -136,10 +141,11 @@ def predict():
         predicted_class = mental_health_prediction_model.predict(word_pad).argmax(
             axis=1
         )
-        return jsonify(data=classes[predicted_class[0]], status=True)
+        return jsonify(prediction=classes[predicted_class[0]], status=True)
 
 
 def load(filename):
+    prediction = ""
     image = cv2.imread(filename)
     color = (0, 255, 0)
     pic_size = 224
@@ -160,7 +166,10 @@ def load(filename):
         result = emotion_detection_model.predict(face_image)
         prediction = label_dict[np.array(result[0]).argmax(axis=0)]  # predicted class
         confidence = np.array(result[0]).max(axis=0)  # degree of confidence
-    return {"prediction": prediction, "confidence": confidence}
+    if prediction:
+        return {"prediction": prediction, "confidence": confidence}
+    else:
+        return {"prediction": "failed"}
 
 
 def get_extended_image(img, x, y, w, h, k=0.1):
