@@ -14,7 +14,6 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 import pandas as pd
 import regex as re
 import cv2
-import asyncio
 
 nltk.download("stopwords")
 
@@ -32,10 +31,12 @@ slang_dict = dict(slang_word.values)
 
 # Stopword
 stopword = stopwords.words("indonesian")
-with open(os.path.join(os.path.dirname(__file__), "stopword_add_v2.txt")) as f:
-    add_stopword = f.read().splitlines()
-    f.close()
-stopword.extend(add_stopword)
+
+# Not Stopword
+with open(os.path.join(os.path.dirname(__file__), "not_stopword.txt")) as l:
+    not_stopword = l.read().splitlines()
+    l.close()
+stopword = set([word for word in stopword if word not in not_stopword])
 
 # Stemming
 factory = StemmerFactory()
@@ -85,17 +86,17 @@ try:
     )
 
     # Load mental health prediction model
-    json_file = open(os.path.join(os.path.dirname(__file__), "model_CNN.json"))
+    json_file = open(os.path.join(os.path.dirname(__file__), "model_CNN_v5.json"))
     loaded_model_json = json_file.read()
     json_file.close()
     mental_health_prediction_model = model_from_json(loaded_model_json)
 
     mental_health_prediction_model.load_weights(
-        os.path.join(os.path.dirname(__file__), "model_CNN.h5")
+        os.path.join(os.path.dirname(__file__), "model_CNN_v5.h5")
     )
 
     with open(
-        os.path.join(os.path.dirname(__file__), "tokenizer_CNN.pickle"), "rb"
+        os.path.join(os.path.dirname(__file__), "tokenizer_CNN_v5.pickle"), "rb"
     ) as handle:
         tokenizer_classification = pickle.load(handle)
 
@@ -135,8 +136,9 @@ def predict():
         data = request.get_json()
         text = data["text"]
         text_cleaned = preprocessing(text)
+        print(text_cleaned)
         word_seq = tokenizer_classification.texts_to_sequences([text_cleaned])
-        word_pad = pad_sequences(word_seq, maxlen=71)
+        word_pad = pad_sequences(word_seq, maxlen=30)
         classes = ["Tidak Terindikasi Mental Illness", "Terindikasi Mental Illness"]
         predicted_class = mental_health_prediction_model.predict(word_pad).argmax(
             axis=1
